@@ -41,5 +41,5 @@ def get_area_footage_data(url):
     return element.get_text(strip=True) if element else None
 
 
-url = "https://www.rightmove.co.uk/properties/167743766#/?channel=RES_BUY"
-print(get_area_footage_data(url))
+# url = "https://www.rightmove.co.uk/properties/167743766#/?channel=RES_BUY"
+# print(get_area_footage_data(url))

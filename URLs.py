@@ -19,3 +19,21 @@ urls = {
 }
 
 
+urls_zoopla = {
+    "Leicester": "https://www.zoopla.co.uk/for-sale/property/leicester/?q=leicester&search_source=for-sale",
+    "Birmingham": "https://www.zoopla.co.uk/for-sale/property/birmingham/?q=birmingham&search_source=for-sale",
+    "London": "https://www.zoopla.co.uk/for-sale/property/london/?q=london&search_source=home",
+    "Glasgow": "https://www.zoopla.co.uk/for-sale/property/glasgow/?q=glasgow&search_source=for-sale",
+    "Edinburgh": "https://www.zoopla.co.uk/for-sale/property/edinburgh-county/?q=edinburgh&search_source=for-sale",
+    "Newcastle": "https://www.zoopla.co.uk/for-sale/property/newcastle-upon-tyne/?q=newcastle%20upon%20tyne&search_source=home",
+    "Bristol": "https://www.zoopla.co.uk/for-sale/property/bristol/?q=bristol&search_source=for-sale",
+    "Manchester": "https://www.zoopla.co.uk/for-sale/property/manchester/?q=Manchester&search_source=for-sale",
+    "Notingham": "https://www.zoopla.co.uk/for-sale/property/nottingham/",
+    "Sheffield": "https://www.zoopla.co.uk/for-sale/property/sheffield/?q=sheffield&search_source=for-sale",
+    "Liverpool": "https://www.zoopla.co.uk/for-sale/property/liverpool/?q=Liverpool&search_source=for-sale",
+    "Cardiff": "https://www.zoopla.co.uk/for-sale/property/cardiff/?q=Cardiff&search_source=for-sale",
+    "Belfast": "https://www.zoopla.co.uk/for-sale/property/belfast/?q=Belfast&search_source=for-sale",
+    "Leeds": "https://www.zoopla.co.uk/for-sale/property/west-yorkshire/leeds/?q=Leeds&search_source=for-sale",
+    "Southampton": "https://www.zoopla.co.uk/for-sale/property/southampton/?q=Southampton&search_source=for-sale"
+}
+
