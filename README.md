@@ -27,4 +27,12 @@ How much Data?
 
 
 
+Data
+Rightmove area is in Sq m
+Zoopla area is in Sq ft
+
+
+Rightmove:
+
+332 data points -> area exisitng 201
 
