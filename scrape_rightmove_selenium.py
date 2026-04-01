@@ -6,6 +6,12 @@ import time
 import pandas as pd
 from get_area_square_footage import get_area_footage_data
 from URLs import urls
+from datetime import datetime
+
+import logging
+import logger  # ensures config is applied
+
+logger = logging.getLogger(__name__)
 
 
 
@@ -17,7 +23,19 @@ url = "https://www.rightmove.co.uk/property-for-sale/find.html?searchLocation=Le
 
 list_cities = ["Glasgow", "Edinburgh", "Newcastle", "Bristol", "Manchester", "Notingham", "Sheffield", "Liverpool", "Cardiff", "Belfast", "Leeds", "Southampton"]
 
+logger.info(f"Starting scraping for cities: {list_cities}")
+logger.info(f"Scraping started at {datetime.now()}")
+
+
+t1_overall = time.time()
+
 for city in list_cities:
+
+    t1_city = time.time()
+
+    logger.info(f"Scraping properties for {city}")
+    logger.info(f"time: {datetime.now()}")
+
     time.sleep(3)
     # Setup driver
     options = webdriver.ChromeOptions()
@@ -28,7 +46,12 @@ for city in list_cities:
         service=Service(ChromeDriverManager().install()),
         options=options
     )
-    driver.get(urls[city])
+
+    try:
+        driver.get(urls[city])
+    except Exception as e:
+        print(f"Error loading page for {city}: {e}")
+        continue
 
     # wait for page to load
     time.sleep(5)
@@ -112,4 +135,16 @@ for city in list_cities:
 
     df = pd.DataFrame(properties)
     print(df.head())
-    df.to_csv(f"properties_with_bedrooms_auto_{city.lower()}.csv", index=False)
+    df.to_csv(f"RAW_DATA/properties_with_bedrooms_auto_{city.lower()}.csv", index=False)
+    t2_city = time.time()
+    city_time = t2_city - t1_city
+
+    logger.info(f"completed scraping for {city} at {datetime.now()}")
+    logger.info(f"Time taken to scrape {city}: {city_time} seconds")
+
+
+t2_overall = time.time()
+total_time = t2_overall - t1_overall
+
+logger.info(f"Total scraping time: {total_time}")
+logger.info(f"Scraping completed at {datetime.now()}")
