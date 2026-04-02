@@ -36,24 +36,6 @@ A listing priced at £400,000 could be cheap or expensive depending on:
 
 This project converts unstructured listing data into structured pricing intelligence that buyers, renters, analysts, and portfolio teams can use.
 
-## Senior-Level Positioning
-
-This project demonstrates:
-
-* **data contracts** for structured ingestion
-* **idempotent ingestion** across repeated scrape runs
-* **historical tracking** for longitudinal analysis
-* **pipeline observability** through logging and error reporting
-* **modular site adapters** for future multi-site expansion
-* **schema validation** to prevent silent bad data
-* **reproducible analytics** rather than ad hoc notebook-only work
-
-A junior solution ends at scraper → CSV.
-
-This solution is scraper → raw layer → validation → cleaning → normalized storage → analytics → reporting.
-
----
-
 ## Features
 
 ### MVP
@@ -78,20 +60,6 @@ This solution is scraper → raw layer → validation → cleaning → normalize
 * CSV export for processed outputs
 * configurable request headers and delays
 * structured logging for scrape and cleaning runs
-
-### Strong Version 2
-
-* multi-site scraping via site adapters
-* historical trend tracking across runs
-* dashboard-ready charts
-* outlier detection using IQR or z-score
-* filtering by property type and price range
-* scheduled pipeline runs
-* SQL-backed storage using SQLite or PostgreSQL
-* regression-based baseline valuation model
-* anomaly detection for overvalued and undervalued listings
-
----
 
 ## Tech Stack
 
