@@ -7,9 +7,12 @@ import pandas as pd
 from get_area_square_footage import get_area_footage_data
 from URLs import urls
 from datetime import datetime
+import db_helper
 
 import logging
 import logger  # ensures config is applied
+from pydantic_validation import Property
+
 
 logger = logging.getLogger(__name__)
 
@@ -119,8 +122,11 @@ for city in list_cities:
             area = get_area_footage_data(link)
         except:
             area = None
-
-        properties.append({
+        
+        city = city
+        
+        property = {
+            "city": city,
             "title": title,
             "location": location,
             "price": price,
@@ -129,13 +135,24 @@ for city in list_cities:
             "bathrooms": bathrooms,
             "area": area,
             "link": link,
-        })
+        }
+
+        properties.append(property)
+        try:
+            validated_property = Property(**property)
+            print(validated_property)
+        except Exception as e:
+            print(f"Validation error for property: {property}")
+            print(f"Error details: {e}")
+        
 
     driver.quit()
 
     df = pd.DataFrame(properties)
     print(df.head())
-    df.to_csv(f"RAW_DATA/properties_with_bedrooms_auto_{city.lower()}.csv", index=False)
+    db_helper.insert_raw_data(df)
+
+    # df.to_csv(f"RAW_DATA/properties_with_bedrooms_auto_{city.lower()}.csv", index=False)
     t2_city = time.time()
     city_time = t2_city - t1_city
 

@@ -1,3 +1,6 @@
 scikit-learn
 pandas
 matplotlib
+db-sqlite3
+pydantic
+pytest
