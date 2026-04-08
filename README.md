@@ -1,770 +1,346 @@
-# Real Estate Price Analyzer
+# Pricing Analyzer – Real Estate Data Intelligence Platform
 
-A production-style data pipeline that turns messy real estate listing pages into normalized, comparable, and time-aware pricing intelligence.
+# What is this project
 
-## Problem Statement
+A data-driven pricing intelligence system that analyzes real estate listings across multiple UK cities using scraped property data. The project focuses on exploratory data analysis (EDA), price normalization (price per area), and cross-city comparisons to uncover actionable insights for property valuation and investment decisions.
 
-Real estate pricing data is fragmented across listing websites, inconsistent in format, and difficult to compare quickly. Raw listing price alone is not enough to make meaningful decisions because value depends on location, size, property type, and data quality.
+The system ingests cleaned datasets (e.g., Rightmove data), computes derived metrics like price per area, and provides analytical insights across cities and property types.
 
-This project solves that by collecting listing data from source websites, validating and cleaning it, storing raw and curated layers separately, and generating reproducible analytics such as median price by area, price per square foot or meter, expensive versus affordable locations, and pricing trends over time.
+# 0. Problem Statement
 
-At its core, this is not a scraping script. It is a reliable ingestion and analytics system.
+Real estate pricing is highly inconsistent and difficult to benchmark due to:
 
-## Project Goals
+Variability in property attributes (area, bedrooms, type)
+Missing or incomplete data (e.g., area missing for many listings)
+Lack of normalized metrics (price alone is insufficient)
+Difficulty comparing properties across cities
+
+This leads to poor decision-making for buyers, investors, and analysts.
+
+# 1. Project Goals
 
 The system is designed to:
 
-* collect real estate listings from one or more websites
-* preserve raw source data for traceability
-* clean and standardize inconsistent fields
-* enforce schema validation and data contracts
-* compute pricing metrics that are actually comparable
-* support multiple runs without corrupting historical data
-* generate reproducible reports and exports
-* provide a foundation for trend analysis and lightweight valuation modeling
+- Build a data pipeline for real estate datasets
+- Perform EDA across multiple cities
+- Normalize pricing using price per area
+- Enable cross-city and cross-property-type comparisons
+- Identify pricing trends, anomalies, and insights
+- Provide a foundation for future predictive modeling
 
-## Why This Project Matters
+# 2. Real Life Business Cases where this project would help and why
 
-Real estate data becomes useful only after normalization.
+1. Real Estate Investment Firms
+Identify undervalued properties using price-per-area benchmarks
+Compare cities to allocate capital efficiently
 
-A listing priced at £400,000 could be cheap or expensive depending on:
+2. Property Buyers
+Understand fair pricing across regions
+Avoid overpaying for properties
 
-* its size
-* its location
-* its property type
-* whether the data is even valid
+3. Real Estate Platforms (e.g., marketplaces)
+Improve listing recommendations
+Provide pricing insights to users
 
-This project converts unstructured listing data into structured pricing intelligence that buyers, renters, analysts, and portfolio teams can use.
+4. Banks / Mortgage Providers
+Risk assessment using property valuation benchmarks
 
-## Features
+5. Urban Planning & Policy
+Analyze housing affordability across cities
 
-### MVP
+# 3. Feature → File Mapping with Evidence from the Code
 
-* single-site scraper
-* extraction of:
+ - 1. Data ingestion (CSV loading) → EDA.ipynb
 
-  * title
-  * location
-  * price
-  * property type
-  * bedrooms
-  * bathrooms
-  * area / square footage
-  * listing URL
-* raw and cleaned data layers
-* data cleaning and normalization pipeline
-* duplicate detection by listing URL
-* average and median price by location
-* average and median price per square foot / meter
-* most expensive and cheapest areas
-* CSV export for processed outputs
-* configurable request headers and delays
-* structured logging for scrape and cleaning runs
+Code in the file
 
-## Tech Stack
+import pandas as pd 
 
-### Core
+df_birmingham = pd.read_csv("CLEANED_DATA/rightmove/rm_properties_birmingham.csv")
+df_birmingham
 
-* **Python**
-* **requests + BeautifulSoup** for static site scraping
-* **Selenium** only when JavaScript rendering is required
-* **Pandas** for cleaning, aggregation, reshaping, and analytics
-* **Pydantic** for schema validation on scraped records
-* **SQLAlchemy** for persistence and repository abstractions
-* **SQLite / PostgreSQL** for local and production-friendly storage
-* **Matplotlib / Plotly** for visual reporting
-* **pytest** for parser, cleaning, and analysis tests
-* **Docker** for reproducible local execution
-* **Prefect** as an optional orchestration layer for scheduled runs
+What this shows
+The notebook reads a cleaned property dataset from disk into a pandas DataFrame. That is the entry point for the analysis pipeline.
 
-### Why These Choices
+Why we need it
+Without this step, the notebook has no structured data to inspect, transform, aggregate, or visualize.
 
-* `requests` and `BeautifulSoup` keep the scraping layer lightweight and fast.
-* `Selenium` is deliberately optional to avoid unnecessary browser overhead.
-* `Pandas` is the backbone of reproducible data cleaning and descriptive analytics.
-* `Pydantic` makes input quality explicit and prevents malformed records from silently entering downstream logic.
-* `SQLAlchemy` supports future transition from CSV-backed workflows to a proper database layer with minimal architectural change.
-* `Docker` ensures reproducibility across machines and environments.
+- 2. Data exploration (summary, stats) → EDA.ipynb
+
+Code in the file
+
+df_birmingham.info()
+df_birmingham.describe()
+
+What this shows
+info() gives column names, data types, and non-null counts. describe() gives summary statistics such as count, mean, standard deviation, min, max, and quartiles.
+
+Why we need it
+This is how you verify schema quality early, understand the shape of the data, and identify issues before doing business analysis or modeling.
+
+ - 3. Data quality checks → EDA.ipynb
+
+Code evidence in the file
+
+And the notebook output shows missingness percentages such as:
+
+title 0.000000
+location 0.000000
+price 0.900901
+bedrooms 7.507508
+bathrooms 7.807808
+
+What this shows
+The notebook explicitly measures data quality and field completeness rather than assuming the source is clean.
+
+
+- 4. Feature engineering (price_per_area) → EDA.ipynb
+
+Code in the file
+
+df_birmingham["price_per_area"] = df_birmingham["price"] / df_birmingham["area"]
+
+What this shows
+The notebook creates a normalized metric from raw listing price and property area.
+
+Why we need it
+Raw price alone is not comparable across differently sized properties. price_per_area is the core business metric that makes cross-property and cross-city comparison meaningful.
+
+- 5. Multi-city aggregation → EDA.ipynb
+
+Code in the file
+
+df_all_cities_groupby_city_mean = df_all_cities.groupby("city")["price_per_area"].mean().reset_index().rename(columns={"price_per_area": "mean_price_per_area"}).sort_values(by="mean_price_per_area", ascending=False)
+
+df_all_cities_groupby_city_median = df_all_cities.groupby("city")["price_per_area"].median().reset_index().rename(columns={"price_per_area": "median_price_per_area"}).sort_values(by="median_price_per_area", ascending=False)
+
+There is also grouping by property type:
+
+df_all_cities_groupby_property_mean = df_all_cities.groupby("property_type")["price_per_area"].mean().reset_index().rename(columns={"price_per_area": "median_price_per_area"}).sort_values(by="median_price_per_area", ascending=False)
+
+What this shows
+The notebook combines all cities into a shared dataset and then computes aggregate metrics by both city and property type.
+
+Why we need it
+This is what turns city-level files into market-level intelligence. It enables benchmarking, regional analysis, and business comparisons across segments.
+
+ - 6. Visualization (bar plots, comparisons) → EDA.ipynb
+
+Code in the file
+
+df_all_cities_groupby_city_median.plot(x="city", y="median_price_per_area", kind="bar", figsize=(12, 6), title="Median Price per Area by City")
+df_all_cities_groupby_property_mean.plot(x="property_type", y="median_price_per_area", kind="bar", figsize=(12, 6), title=f"Average Price per Area by Property Type")
+
+And the notebook saves chart outputs:
+
+plt.savefig("reports/median_price_per_area_by_city.png")
+plt.savefig(f"reports/median_price_per_area_by_property_type_{city}.png")
+
+What this shows
+The project does not stop at tables. It renders comparison visuals for stakeholder-friendly analysis.
+
+Why we need it
+Visualizations accelerate decision-making by making trends, rankings, and outliers easy to interpret.
+
+- 7. Linear regression modeling → EDA.ipynb
+I can verify that the notebook implements a linear regression pipeline setup, including feature preparation, encoding, and data validation. The following code is present:
+
+from sklearn.linear_model import LinearRegression
+X = df_all_cities[["area", "bedrooms", "bathrooms", "property_type"]]
+X = pd.get_dummies(X, columns=["property_type"], drop_first=True)
+
+y = df_all_cities["price"]
+y.isnull().sum()
+X.isnull().sum()
+
+This confirms that:
+
+A regression model is intended (via LinearRegression)
+Input features (X) and target (y) are clearly defined
+Categorical variables are encoded using one-hot encoding
+The dataset is validated to ensure no missing values before modeling
+
+What this means
+The notebook successfully implements a model-ready regression pipeline, including:
+
+Multi-city dataset creation
+Missing value handling (mean/median imputation)
+Feature engineering and selection
+Categorical encoding for ML compatibility
+Validation of clean training data
+
+This represents the complete data preparation phase for regression modeling.
+
+What is not clearly shown
+
+I have not done
+
+model.fit(X, y)
+train_test_split(...)
+model.predict(...)
+
+or evaluation metrics such as RMSE or R².
+
+
+ - 8. Reporting output directory → /reports/
+
+Code in the file
+
+import os
+os.mkdir("reports")
+plt.savefig("reports/median_price_per_area_by_city.png")
+df_all_cities_groupby_city_mean.to_csv("reports/mean_price_per_area_by_city.csv", index=False)
+df_all_cities_groupby_city_median.to_csv("reports/median_price_per_area_by_city.csv", index=False)
+
+What this shows
+The notebook creates a dedicated reporting folder and persists both graphics and tabular outputs to it.
+
+Why we need it
+This separates generated artifacts from source code and makes the analysis reproducible and shareable.
+
+
+# 4. Tech Stack
+
+- Python
+- requests + BeautifulSoup for static site scraping
+- Selenium only when JavaScript rendering is required
+- Pandas for cleaning, aggregation, reshaping, and analytics
+- NumPy for numerical operations and feature transformations
+- scikit-learn for regression modeling and preprocessing
+- Pydantic for schema validation on scraped records
+
+Why These Choices
+
+- requests and BeautifulSoup keep the scraping layer lightweight and fast.
+- Selenium is deliberately optional to avoid unnecessary browser overhead.
+- Pandas serves as the backbone for:
+Data cleaning
+Feature engineering
+Aggregation and analysis
+- NumPy supports efficient numerical operations required for modeling.
+- scikit-learn enables:
+Linear regression modeling
+Feature preprocessing (e.g., encoding categorical variables)
+Easy extension to more advanced models (Random Forest, Gradient Boosting)
+- Pydantic enforces strong data contracts and prevents malformed scraped data from entering the pipeline.
 
 ---
 
-## System Architecture
+# 5.System Architecture
+
+Raw Scraped Data → Cleaned CSV → EDA → Insights / Reports 
+
+Scraping layer gathers raw data
+Cleaning layer ensures data quality
+EDA layer extracts meaning and prepares features
+Reporting layer delivers insights
+
++----------------------+
+|  1. Raw Scraped Data    |
++----------------------+
+What this layer does
+
+Collects raw property listings from external websites (e.g., Rightmove)
+Contains unstructured or semi-structured data:
+HTML content
+Inconsistent formats
+Missing or noisy values
+Represents the source of truth before any transformation
+
+Tech stack used
+
+requests → Fetch static web pages
+BeautifulSoup → Parse HTML content
+Selenium→ Handle JavaScript-rendered pages
+Pydantic → Validate scraped records and enforce schema
+
+Why it matters
+
+This layer determines data quality for the entire pipeline
+Poor scraping = unreliable analytics downstream
+
++----------------------+
+|  2. Cleaned CSV Files   |
++----------------------+
+What this layer does
+
+Transforms raw scraped data into structured datasets
+Performs:
+Data cleaning (remove nulls, fix formats)
+Standardization (consistent schema across cities)
+Basic transformations (e.g., numeric conversion)
+Outputs clean .csv files per city
+
+Tech stack used
+
+Pandas → Data cleaning and transformation
+NumPy → Numerical operations
+SQLAlchemy (optional future) → Persist cleaned data into DB
+SQLite / PostgreSQL (optional) → Structured storage
+
+Why it matters
+
+Creates a reliable, reusable dataset
+Decouples scraping from analysis
+Enables reproducibility and faster iteration
+
++----------------------+
+|  3.EDA Notebook        |
+|  - Stats             |
+|  - Aggregations      |
+|  - Feature Eng       |
++----------------------+
+What this layer does
+
+Performs exploratory data analysis (EDA) and prepares data for modeling
+Key responsibilities:
+Statistical summaries (describe, info)
+Data quality checks (null analysis)
+Feature engineering (e.g., price_per_area)
+Aggregations (city-level, property-type level)
+Data transformation for ML (encoding, scaling)
+
+Tech stack used
+
+Pandas → Core analysis and transformations
+NumPy → Numerical operations
+Matplotlib / Plotly → Visualization
+scikit-learn → (Regression layer) feature preparation & modeling
+
+Why it matters
+
+This is where raw data becomes insights
+
+Bridges the gap between:
+
+Data → Intelligence → Prediction
+Forms the foundation for both analytics and machine learning
+
++----------------------+
+|  4.Insights / Reports  |
++----------------------+
+What this layer does
+
+Produces final outputs for stakeholders
+Includes:
+Aggregated metrics (mean/median price per area)
+Visualizations (bar charts, comparisons)
+Exported CSV reports
+Model-ready datasets (for regression)
 
-Architecture follows a layered pipeline design:
+Tech stack used
 
-```text
-Source Website
-      |
-      v
-Scraper (requests / BeautifulSoup / Selenium)
-      |
-      v
-Raw Data Storage
-      |
-      v
-Cleaning & Normalization Pipeline
-      |
-      v
-Pandas Analysis Engine
-      |
-      +------> CSV / Reports
-      |
-      +------> Visualizations
+Matplotlib / Plotly → Charts and visual outputs
+Pandas → Exporting reports (.csv)
+File system (/reports/) → Persisting outputs
+(Future) Streamlit / BI tools → Dashboarding
 
+Why it matters
 
-## Data Layers
-
-The project uses separate data layers to preserve lineage and support reproducibility.
-
-### Raw Layer
-
-Stores unmodified scraped records.
-
-Examples:
-
-* `data/raw/raw_listings.csv`
-* `raw_listings` database table
-
-Purpose:
-
-* preserves source fidelity
-* supports debugging when parsing or cleaning rules change
-* enables reprocessing without rescraping
-
-### Cleaned Layer
-
-Stores normalized, validated records ready for analysis.
-
-Examples:
-
-* `data/processed/cleaned_listings.csv`
-* `cleaned_listings` database table
-
-Purpose:
-
-* standardizes units and currencies
-* resolves missing or malformed values where possible
-* removes or flags invalid and duplicate records
-
-### Analytics Layer
-
-Stores computed outputs for reporting.
-
-Examples:
-
-* `data/processed/analysis_output.csv`
-* `reports/figures/*.png`
-
-Purpose:
-
-* publish metrics by location and property type
-* generate visual summaries
-* support downstream dashboards or presentations
-
----
-
-## End-to-End Data Flow
-
-1. **Scrape listing pages**
-
-   * fetch listing index pages
-   * paginate through results
-   * extract listing cards and detail pages where required
-
-2. **Validate raw records**
-
-   * map HTML to raw schema
-   * capture missing or malformed fields
-   * log page-level extraction issues
-
-3. **Persist raw data**
-
-   * append raw records with scrape timestamp and source metadata
-   * preserve each run for traceability
-
-4. **Clean and normalize**
-
-   * parse currencies and numeric values
-   * standardize area units
-   * normalize location strings
-   * standardize property type categories
-   * validate URLs and remove duplicates
-
-5. **Generate analytical features**
-
-   * `price_numeric`
-   * `area_numeric`
-   * `price_per_area`
-   * run timestamp
-   * source site
-   * deduplication indicators
-   * quality flags
-
-6. **Run analytics**
-
-   * compute descriptive statistics
-   * aggregate by location
-   * aggregate by property type
-   * detect outliers
-   * rank cheapest and most expensive areas
-   * optionally fit baseline regression models
-
-7. **Export results**
-
-   * save CSV outputs
-   * generate charts into `reports/figures`
-   * produce reproducible run artifacts
-
----
-
-## Key Metrics and Calculations
-
-This project emphasizes normalized and trustworthy metrics instead of naive averages.
-
-### 1. Price per Area
-
-Core normalization metric:
-
-[
-price_per_area = \frac{price}{area}
-]
-
-Why it matters:
-
-* raw price is misleading without size
-* supports fair comparisons across different properties
-* enables location and property-type benchmarking
-
-Reported outputs:
-
-* mean
-* median
-* distribution
-* grouped by location
-* grouped by property type
-
-### 2. Location-Based Aggregations
-
-Grouped by location:
-
-* listing count
-* average price
-* median price
-* average price per area
-* median price per area
-
-Median is preferred for ranking because it is more robust to luxury outliers.
-
-### 3. Outlier Detection
-
-Used to identify:
-
-* unrealistically large or small areas
-* extreme price per area values
-* suspicious scraped records
-
-Methods:
-
-* IQR-based filtering
-* z-score based checks where appropriate
-
-Senior signal:
-
-> We do not trust raw data. We validate it before drawing conclusions.
-
-### 4. Distribution Analysis
-
-Used to understand spread rather than just central tendency:
-
-* histogram of price per area
-* boxplots by location
-* variance analysis by area or property type
-
-Example insight:
-
-* a location may have a high median but also high spread, suggesting unstable pricing
-
-### 5. Cheapest vs Most Expensive Areas
-
-Rank locations by:
-
-* median price per area
-
-This avoids misleading conclusions caused by a few extreme listings.
-
-### 6. Property Type Segmentation
-
-Compare:
-
-* apartments vs houses vs studios
-* average price
-* median price
-* average price per area
-* median price per area
-
-Example insight:
-
-* apartments may have higher pricing density even when total prices are lower
-
-### 7. Time-Based Trends
-
-If historical runs are stored, the project supports:
-
-* price over time
-* price per area over time
-* location trend tracking
-* market movement monitoring across scrape runs
-
-This is a strong signal that the system supports longitudinal analysis, not just one-off snapshots.
-
-### 8. Data Quality Metrics
-
-Track and report:
-
-* missing value rate by field
-* records dropped during cleaning
-* duplicate rate
-* invalid area rate
-* invalid price rate
-
-Example:
-
-* 12 percent of records had invalid area values and were excluded from price-per-area calculations
-
-### 9. Deduplication
-
-Primary strategy:
-
-* deduplicate by canonical listing URL
-
-Optional stronger strategy:
-
-* hash title + location + price + area when URL quality is poor
-
-Outputs:
-
-* records before deduplication
-* records after deduplication
-* duplicate rate by run
-
-### 10. Weighted Metrics
-
-Used to avoid distortion from small properties:
-
-[
-weighted\ average\ price_per_area = \frac{\sum price}{\sum area}
-]
-
-This is often more representative than a simple arithmetic average.
-
----
-
-## Regression Layer
-
-Regression is not the core of the project, but it adds a valuable senior-level modeling component.
-
-### Purpose
-
-Use regression as:
-
-* a baseline valuation model
-* a driver analysis tool
-* a pricing anomaly detector
-
-### Recommended Targets
-
-#### Descriptive Analytics Target
-
-* `price_per_area`
-
-Useful for comparing normalized pricing across locations and property types.
-
-#### Modeling Target
-
-* `log(price)`
-
-Useful because real estate prices are often skewed and log transformation improves stability.
-
-### Example Features
-
-Numeric features:
-
-* area
-* bedrooms
-* bathrooms
-
-Categorical features:
-
-* location
-* property type
-
-Optional enriched features:
-
-* listing date
-* furnished status
-* parking
-* new build vs resale
-* floor number
-* distance to city center
-
-### Model Outputs
-
-* coefficients
-* intercept
-* R²
-* MAE
-* RMSE
-* residuals
-* most overvalued listings
-* most undervalued listings
-
-### Example Interpretation
-
-A regression result might support statements like:
-
-* each additional square meter is associated with an increase in price, holding other variables constant
-* city-center properties remain more expensive even after controlling for size and property type
-* apartments have higher price density than houses after normalization
-
-### Important Limitations
-
-* regression shows association, not causation
-* missing features can bias coefficient estimates
-* nonlinear market behavior may reduce fit quality
-* poor scraped data can make the model unreliable
-
-This is why cleaning, validation, and outlier handling come before modeling.
-
----
-
-## Design Decisions
-
-### 1. Separate Raw and Clean Layers
-
-Raw data is never overwritten by cleaned data.
-
-Why:
-
-* supports debugging
-* preserves lineage
-* allows reprocessing with improved cleaning rules
-
-### 2. Idempotent Ingestion
-
-Each run should be safe to execute repeatedly.
-
-Why:
-
-* pipelines often run on schedules
-* duplicate data corruption is a common real-world failure mode
-* historical tracking requires controlled inserts rather than blind overwrite behavior
-
-### 3. Schema Validation at the Boundary
-
-Pydantic schemas validate records as early as possible.
-
-Why:
-
-* reduces downstream surprises
-* makes contract violations explicit
-* improves parser maintainability
-
-### 4. Repository Abstraction
-
-Persistence is handled via repository classes.
-
-Why:
-
-* isolates storage logic
-* enables CSV-first and DB-backed modes
-* simplifies testing
-
-### 5. Modular Pipelines
-
-Scrape, clean, and analysis phases are separated.
-
-Why:
-
-* easier extension
-* easier retries
-* clearer ownership of failures
-
-### 6. Median Over Mean for Rankings
-
-Median is preferred for location affordability comparisons.
-
-Why:
-
-* real estate data is heavily skewed
-* luxury outliers distort mean-based rankings
-
----
-
-## Trade-Offs
-
-### Chosen Simplifications
-
-* start with a single-site scraper before generalizing to multiple sites
-* use CSV outputs for transparency before making the database mandatory
-* use linear regression as a baseline model instead of jumping to complex ensembles
-* keep Selenium optional to reduce runtime and operational complexity
-
-### Why These Trade-Offs Are Reasonable
-
-The project optimizes for strong engineering fundamentals first:
-
-* reliable ingestion
-* clean data contracts
-* correct normalization
-* reproducible outputs
-
-This is more valuable than adding premature modeling complexity on top of weak data foundations.
-
----
-
-## Error Handling and Logging
-
-### Error Handling
-
-The system explicitly handles:
-
-* missing HTML fields
-* malformed HTML structures
-* layout changes in source pages
-* blocked requests
-* request timeouts
-* invalid numeric parsing
-* duplicate URLs
-* broken pagination
-* missing area or price values
-* invalid or unsupported units
-
-### Logging
-
-The pipeline logs:
-
-* scrape start time
-* scrape end time
-* source URL
-* pages scraped
-* records extracted
-* records dropped during cleaning
-* duplicates removed
-* errors per page
-* output file paths
-* run identifiers
-
-### Suggested Flags
-
-```bash
-python -m real_estate_analyzer.cli scrape --base-url "<listing-url>" --max-pages 10
-python -m real_estate_analyzer.cli clean --input data/raw/raw_listings.csv --output data/processed/cleaned_listings.csv
-python -m real_estate_analyzer.cli analyze --input data/processed/cleaned_listings.csv --output data/processed/analysis_output.csv
-```
-
-If you later add a REST API, document endpoints such as:
-
-* `POST /scrape`
-* `POST /clean`
-* `POST /analyze`
-* `GET /reports/latest`
-
----
-
-## Setup Instructions
-
-### 1. Clone the Repository
-
-```bash
-git clone <your-repo-url>
-cd real-estate-price-analyzer
-```
-
-### 2. Create a Virtual Environment
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-```
-
-On Windows:
-
-```bash
-.venv\Scripts\activate
-```
-
-### 3. Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 4. Configure Environment
-
-Create a `.env` file if needed:
-
-```env
-BASE_URL=https://example-listings-site.com
-REQUEST_TIMEOUT=20
-REQUEST_DELAY_SECONDS=2
-USER_AGENT=Mozilla/5.0 ...
-DATABASE_URL=sqlite:///data/app.db
-```
-
-### 5. Run the Pipeline
-
-```bash
-python -m real_estate_analyzer.cli run-all
-```
-
----
-
-## Docker Setup
-
-### Build
-
-```bash
-docker build -t real-estate-price-analyzer .
-```
-
-### Run
-
-```bash
-docker run --rm \
-  -v $(pwd)/data:/app/data \
-  -v $(pwd)/reports:/app/reports \
-  real-estate-price-analyzer
-```
-
-### Why Docker
-
-Docker ensures:
-
-* reproducible execution
-* consistent dependencies
-* easier onboarding
-* cleaner CI integration
-
----
-
-## Output Artifacts
-
-After a successful run, expected outputs include:
-
-* `data/raw/raw_listings.csv`
-* `data/processed/cleaned_listings.csv`
-* `data/processed/analysis_output.csv`
-* `reports/figures/price_per_area_histogram.png`
-* `reports/figures/location_boxplot.png`
-
----
-
-## Testing
-
-### Run Tests
-
-```bash
-pytest
-```
-
-### Test Coverage Should Include
-
-* HTML parser correctness
-* price parsing and numeric normalization
-* unit conversion logic
-* schema validation
-* deduplication logic
-* cleaning rules
-* aggregation correctness
-* regression pipeline sanity checks
-* repository behavior
-
-### Example Test Categories
-
-* `tests/unit/test_price_parsers.py`
-* `tests/unit/test_html_parsers.py`
-* `tests/unit/test_clean_service.py`
-* `tests/integration/test_scrape_pipeline.py`
-* `tests/integration/test_analysis_pipeline.py`
-
----
-
-## Scaling Strategy
-
-If this system were taken toward production, the next steps would be:
-
-### Scraping
-
-* rotate user agents and backoff strategies
-* add retry logic with circuit-breaker style controls
-* split per-site logic into adapter modules
-* move toward queue-based scraping for scale
-
-### Storage
-
-* replace flat file outputs as the system of record with PostgreSQL
-* partition historical data by scrape date or source
-* add audit metadata for each run
-
-### Orchestration
-
-* schedule jobs with Prefect
-* add run metadata, retry policies, and failure notifications
-* track SLA-style metrics for pipeline health
-
-### Analytics
-
-* expose outputs through dashboards
-* support area-level geospatial enrichment
-* add anomaly detection and forecasting
-* compare markets across multiple sources
-
-### Quality
-
-* add data quality checks and thresholds
-* fail runs if required-field completeness drops below threshold
-* alert on sudden parser failure rates or layout breakages
-
----
-
-## Future Improvements
-
-* multi-site adapter framework
-* automated scheduled scraping
-* dashboard UI
-* postcode or coordinate enrichment
-* geospatial clustering
-* baseline and advanced price forecasting
-* anomaly detection for suspicious listings
-* confidence intervals for area-level metrics
-* richer property attributes such as parking, furnishing, and floor number
-* cloud deployment with scheduled workflows and centralized logging
-
----
-
-## Example Insights This Project Can Produce
-
-* Downtown has the highest median price per square foot, but also the highest pricing variance.
-* Smaller apartments show higher price density than larger houses.
-* Outliers inflated the average listing price by a meaningful margin before cleaning.
-* After normalization by area, some “premium” locations are less expensive than raw price rankings suggest.
-* Historical trend tracking shows whether pricing changes are broad-based or isolated to certain areas.
-
----
-
-## What Interviewers Should Notice
-
-This project is intentionally built to demonstrate engineering maturity, not just scraping ability.
-
-It shows:
-
-* strong data modeling decisions
-* careful handling of messy real-world data
-* robust normalization logic
-* idempotent and reproducible pipeline design
-* business-relevant analytical interpretation
-
-> The core challenge was not scraping pages. It was designing a reliable pipeline that transforms inconsistent listing data into normalized, comparable pricing metrics with strong data quality guarantees.
-
+Converts analysis into actionable business insights
+Enables:
+Decision-making
+Reporting
+Sharing results with non-technical stakeholders
 
 
