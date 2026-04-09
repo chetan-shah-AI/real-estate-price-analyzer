@@ -349,7 +349,7 @@ Sharing results with non-technical stakeholders
 
  # 6. Data Flow / Workflow
  
- # - 1. Data Loading
+ # 1. Data Loading
 
 Where it happens in the code
 
@@ -369,7 +369,7 @@ for city in list_cities:
 What it shows
 This is the data ingestion step. The notebook first loads individual city CSV files and then scales that pattern into a loop that reads multiple city-level datasets and appends them into a shared list for combination.
 
-# - 2. Initial Exploration
+# 2. Initial Exploration
 
 Where it happens in the code
 
@@ -384,7 +384,7 @@ describe() gives summary statistics such as count, mean, std, min, max, and quar
 
 This is how the notebook validates that the data loaded correctly and starts understanding distribution and completeness.
 
-# - 3. Data Quality Analysis
+# 3. Data Quality Analysis
 
 Where it happens in the code
 The notebook has an explicit section:
@@ -410,7 +410,7 @@ and especially area
 
 This is where the notebook identifies that some fields are sparse and may affect downstream analysis.
 
-# - 4. Feature Engineering
+# 4. Feature Engineering
 
 Where it happens in the code
 
@@ -423,7 +423,7 @@ price_per_area = price / area
 
 That is the core engineered feature in the notebook. It converts raw listing price into a normalized metric that makes properties more comparable across different sizes.
 
-# - 5. Aggregation
+# 5. Aggregation
 
 Where it happens in the code
 
@@ -449,7 +449,7 @@ city-specific property-type comparisons
 
 This is where raw rows become business-level summaries.
 
-# - 6. Visualization
+# 6. Visualization
 
 Where it happens in the code
 
@@ -466,7 +466,7 @@ pricing trends across property types
 pricing differences within each city
 ranking patterns more easily than by reading tables alone
 
-- # 7. Insights Generation
+# 7. Insights Generation
 
 Where it happens in the code
 The notebook prints and displays ranked outputs like:
@@ -497,7 +497,7 @@ and low-price outliers
 
  # 7. Design Decisions
 
-- # 1. Use of price_per_area as Primary Metric
+# 1. Use of price_per_area as Primary Metric
 
 What I chose
 Used:
@@ -527,7 +527,7 @@ For production pricing → regression models outperform single metrics
 Senior insight
 This decision intentionally balances simplicity + interpretability, making insights explainable to non-technical stakeholders.
 
-- # 2. Notebook-Based Architecture
+# 2. Notebook-Based Architecture
 
 What I chose
 Used EDA.ipynb and regression_analysis.ipynb as the main execution layer.
@@ -557,7 +557,7 @@ This is a deliberate phase-based decision:
 
 Notebook → Prototype → Pipeline → Production System
 
-- # 3. City-wise Dataset Separation
+# 3. City-wise Dataset Separation
 
 What I chose
 Stored and processed data as:
@@ -589,7 +589,7 @@ Large scale → Partitioned database tables or data lake
 Senior insight
 This design follows a horizontal partitioning mindset, which scales naturally as data grows.
 
-- # 4. Handling Missing Data
+# 4. Handling Missing Data
 
 What I chose
 
@@ -623,7 +623,7 @@ This is a context-aware decision:
 
 EDA prioritizes truth → ML prioritizes completeness
 
-- # 10. Error Handling and Logging
+# 8. Error Handling and Logging
 
  - # 1. Schema Validation → df.info()
 
@@ -650,7 +650,7 @@ What it effectively logs
 A snapshot of dataset health
 Acts as a lightweight “schema validation log”
 
- - # 2. Null Checks for Critical Fields
+# 2. Null Checks for Critical Fields
 
 Where it happens in the code
 
@@ -710,7 +710,7 @@ Important nuance
 In EDA → rows with missing area naturally result in NaN
 In regression → missing values are explicitly filled before modeling
 
-- # 4. Data Cleaning as Error Prevention
+# 4. Data Cleaning as Error Prevention
 
 Where it happens in the code
 
@@ -736,7 +736,7 @@ Guarantees that:
 X → no nulls
 y → no nulls
 
-- # 5. Warnings as Implicit Logging
+# 5. Warnings as Implicit Logging
 
 Where it happens in the code (output)
 
@@ -756,9 +756,9 @@ What it effectively logs
 
 Runtime warnings that signal data mutation risks
 
-# 11. Challenges & Solutions (with Code References)
+# 9. Challenges & Solutions (with Code References)
 
- - # Challenge 1: Missing Area Data
+# Challenge 1: Missing Area Data
 
 Problem
 Many listings do not have area, which is required to compute price-per-area.
@@ -802,7 +802,7 @@ Why this works
 EDA → preserves data integrity
 ML → ensures completeness for modeling
 
-- # Challenge 2: Data Inconsistency Across Cities
+# Challenge 2: Data Inconsistency Across Cities
 
 Problem
 Different cities have very different price ranges (e.g., London vs smaller cities), making raw comparisons misleading.
@@ -837,7 +837,7 @@ Removes scale bias
 Enables apples-to-apples comparison
 
 
-- # #Challenge 3: Small Sample Sizes (Per City)
+# #Challenge 3: Small Sample Sizes (Per City)
 
 Problem
 Individual city datasets are small → unreliable statistics
@@ -875,7 +875,7 @@ Increases sample size
 Produces more stable and reliable statistics
 
 
-- # Challenge 4: Outliers (e.g., London Prices)
+# Challenge 4: Outliers (e.g., London Prices)
 
 Problem
 Extreme values (especially London) skew averages
@@ -907,3 +907,727 @@ Why this works
 
 Median is resistant to outliers
 Better reflects “typical” property value
+
+ # 10. Trade-offs (with Alternatives)
+ 
+ # 1. Use of Notebooks
+
+What I chose
+Used Jupyter notebooks (EDA.ipynb, regression_analysis.ipynb) as the primary development environment.
+
+Trade-off
+
+ Very fast for exploration, visualization, and iteration
+Not ideal for:
+production pipelines
+code reuse
+version control (diffing notebooks is hard)
+
+Alternative: Modular Python Scripts
+
+src/
+  data_loader.py
+  preprocessing.py
+  modeling.py
+
+Why the alternative could be better
+
+Cleaner separation of concerns
+Easier testing (pytest)
+Better maintainability and scalability
+Can be deployed as APIs or pipelines
+
+What is best
+
+Exploration → Notebooks (best choice)
+Production → Modular scripts (better long-term)
+
+# 2. Ignoring Missing Area (in EDA)
+
+What I chose
+Did not impute missing area values during EDA:
+
+price_per_area = price / area  # results in NaN if area missing
+
+Trade-off
+
+Keeps analysis honest (no artificial assumptions)
+Loses data:
+rows with missing area are excluded from analysis
+
+Alternative: Imputation Models
+
+area = area.fillna(area.median())
+
+or more advanced:
+
+KNN imputation
+Regression-based imputation
+
+Why the alternative could be better
+
+Retains more data → larger sample size
+Improves model performance in ML pipelines
+Enables full dataset utilization
+
+What is best
+
+EDA → Avoid imputation (truth > completeness)
+ML → Use imputation (completeness > purity)
+
+# 3. Using Pandas Only
+
+What I chose
+Used pandas for all data processing:
+
+df.groupby(...)
+df.merge(...)
+df.plot(...)
+
+Trade-off
+
+Simple, fast, and easy to use
+Limited scalability:
+struggles with very large datasets (millions+ rows)
+single-machine processing only
+
+Alternative: Spark / Dask
+
+Spark
+Distributed processing across clusters
+Dask
+Parallelized pandas-like operations
+
+Why the alternative could be better
+
+Handles large-scale data (GBs → TBs)
+Enables distributed computation
+Better suited for production data pipelines
+
+What is best
+
+Small/medium datasets → Pandas (best choice)
+Large-scale systems → Spark/Dask (better scalability)
+
+# 4. Static CSV Files
+
+What I chose
+Stored data as CSV files:
+
+rm_properties_london.csv
+rm_properties_birmingham.csv
+
+Trade-off
+
+Easy to:
+read
+share
+debug
+
+Limitations:
+no indexing
+slow querying
+no concurrency support
+difficult to scale
+
+Alternative: Database (PostgreSQL)
+
+Store data in structured tables:
+SELECT * FROM properties WHERE city = 'London';
+
+Why the alternative could be better
+
+Faster querying and filtering
+Supports large datasets efficiently
+Enables:
+concurrent access
+indexing
+joins across datasets
+Integrates well with APIs and production systems
+
+What is best
+
+Early-stage / small data → CSV (best for simplicity)
+Production / scalable systems → PostgreSQL (better choice)
+
+# 11. Testing
+
+# Current Testing
+
+The current project does not show a formal automated test suite such as pytest. Instead, the notebooks use manual validation to verify that the data and outputs look correct before moving to the next step. This includes schema inspection, summary statistics, null checks, outlier inspection, visualization review, and model sanity checks.
+
+# A. Manual validation through data summaries
+Code used
+df_birmingham.info()
+df_birmingham.describe()
+What this tested
+whether the CSV loaded correctly
+whether expected columns exist
+whether column types look right
+whether there are missing values
+whether numeric distributions are sensible
+Why this is useful
+
+This is a fast way to catch obvious data issues early, such as:
+
+price loaded as text instead of numeric
+too many missing values in area
+impossible ranges in bedrooms or bathrooms
+
+This is visible in the EDA notebook and acts as a basic validation step before feature engineering or aggregation.
+
+# B. Manual validation through null checks
+Code used
+y.isnull().sum()
+X.isnull().sum()
+What this tested
+whether the regression target (price) has any missing values
+whether the model feature matrix has any missing values after preprocessing
+Why this is useful
+
+This validates that the regression dataset is model-ready. Linear regression cannot reliably train if required features or the target still contain nulls. The notebook shows y.isnull().sum() returning 0, and X.isnull().sum() showing zero nulls across all encoded columns.
+
+# C. Manual validation through feature inspection
+Code used
+X = df_all_cities[["area", "bedrooms", "bathrooms", "property_type"]]
+X = pd.get_dummies(X, columns=["property_type"], drop_first=True)
+len(X.columns)
+X.columns
+What this tested
+whether the correct regression features were selected
+whether categorical encoding worked
+whether the number of resulting columns is reasonable
+Why this is useful
+
+This confirms that the feature engineering and preprocessing logic produced the expected machine-learning input structure. In the notebook, the encoded feature matrix contains 22 columns.
+
+# D. Manual validation through visual inspection
+Code used
+df_all_cities_groupby_property_mean.plot(
+    x="property_type",
+    y="median_price_per_area",
+    kind="bar",
+    figsize=(12, 6),
+    title="Average Price per Area by Property Type"
+)
+
+and outlier inspection:
+
+Q1 = df_all_cities["price_per_area"].quantile(0.25)
+Q3 = df_all_cities["price_per_area"].quantile(0.75)
+IQR = Q3 - Q1
+
+lower_bound = Q1 - 1.5 * IQR
+upper_bound = Q3 + 1.5 * IQR
+
+outliers = df_all_cities[
+    (df_all_cities["price_per_area"] < lower_bound) |
+    (df_all_cities["price_per_area"] > upper_bound)
+]
+What this tested
+whether city/property-type comparisons look sensible
+whether there are obvious anomalies or outliers
+whether the derived metric price_per_area behaves reasonably
+Why this is useful
+
+Visual inspection helps catch issues that summary tables may miss, such as highly skewed distributions, suspicious categories, or outlier-heavy segments. The IQR-based outlier logic also shows that you explicitly checked for extreme values instead of trusting all records equally.
+
+# E. Manual validation through model sanity checks
+Code used
+model.coef_
+model.intercept_
+y_pred = model.predict(X)
+table_df = pd.DataFrame({
+    "Feature": X.columns,
+    "Coefficient": model.coef_
+})
+table_df
+What this tested
+whether the model trained successfully
+whether predictions can be generated
+whether coefficients are available for interpretation
+whether the feature-to-coefficient mapping looks reasonable
+Why this is useful
+
+This is not a full evaluation test, but it is a useful sanity check that the regression pipeline is functioning end to end and that the outputs are interpretable.
+
+What tests are missing today
+
+The notebooks show manual validation, but they do not show a structured automated test suite such as:
+
+unit tests for feature calculations
+tests for CSV loading expectations
+schema validation tests
+threshold-based data quality tests
+regression training/evaluation assertions
+
+That means the current testing approach is good for exploration, but weaker for long-term maintainability and production reliability.
+
+# Recommended Testing
+
+# 1. Unit tests for feature calculations
+Why this would be good
+
+Feature engineering is core business logic. If price_per_area is wrong, many downstream insights become wrong too. A unit test protects this logic from silent breakage.
+
+Recommended test code
+import pandas as pd
+
+def add_price_per_area(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    df["price_per_area"] = df["price"] / df["area"]
+    return df
+
+def test_price_per_area_calculation():
+    df = pd.DataFrame({
+        "price": [100000, 200000],
+        "area": [100, 400]
+    })
+
+    result = add_price_per_area(df)
+
+    assert result["price_per_area"].tolist() == [1000.0, 500.0]
+
+# 2. Unit tests for data loading
+Why this would be good
+
+Your whole pipeline depends on city CSVs having the expected columns. A loading test ensures that files are readable and structurally consistent.
+
+Recommended test code
+import pandas as pd
+
+REQUIRED_COLUMNS = {
+    "title", "location", "price", "property_type",
+    "bedrooms", "bathrooms", "area", "link"
+}
+
+def load_city_data(path: str) -> pd.DataFrame:
+    return pd.read_csv(path)
+
+def test_city_csv_has_required_columns(tmp_path):
+    sample = pd.DataFrame([{
+        "title": "A",
+        "location": "B",
+        "price": 100000,
+        "property_type": "Detached",
+        "bedrooms": 3,
+        "bathrooms": 2,
+        "area": 120,
+        "link": "http://example.com"
+    }])
+
+    file_path = tmp_path / "sample.csv"
+    sample.to_csv(file_path, index=False)
+
+    df = load_city_data(file_path)
+    assert REQUIRED_COLUMNS.issubset(df.columns)
+
+# 3. Data validation tests for schema checks
+Why this would be good
+
+Notebook inspection with df.info() is useful, but automated schema checks make validation repeatable and enforceable in CI/CD.
+
+Recommended test code
+import pandas as pd
+
+def validate_schema(df: pd.DataFrame):
+    expected_types = {
+        "title": "object",
+        "location": "object",
+        "price": "number",
+        "property_type": "object",
+        "bedrooms": "number",
+        "bathrooms": "number",
+        "area": "number",
+        "link": "object"
+    }
+
+    for col, kind in expected_types.items():
+        assert col in df.columns, f"Missing required column: {col}"
+        if kind == "number":
+            assert pd.api.types.is_numeric_dtype(df[col]), f"{col} must be numeric"
+        elif kind == "object":
+            assert df[col].dtype == "object", f"{col} must be text-like"
+
+def test_schema_validation():
+    df = pd.DataFrame({
+        "title": ["A"],
+        "location": ["B"],
+        "price": [100000],
+        "property_type": ["Detached"],
+        "bedrooms": [3],
+        "bathrooms": [2],
+        "area": [120],
+        "link": ["http://example.com"]
+    })
+
+    validate_schema(df)
+
+# 4. Data validation tests for null thresholds
+Why this would be good
+
+In your notebooks, you manually inspect nulls. A threshold-based test would automatically fail if data quality degrades too far, which is especially useful when scraping sources change.
+
+Recommended test code
+import pandas as pd
+
+NULL_THRESHOLDS = {
+    "price": 0.01,       # max 1% null
+    "bedrooms": 0.10,    # max 10% null
+    "bathrooms": 0.10,   # max 10% null
+    "area": 0.50         # allow higher null rate if source is sparse
+}
+
+def validate_null_thresholds(df: pd.DataFrame):
+    for col, max_null_rate in NULL_THRESHOLDS.items():
+        actual_null_rate = df[col].isnull().mean()
+        assert actual_null_rate <= max_null_rate, (
+            f"{col} null rate too high: {actual_null_rate:.2%} > {max_null_rate:.2%}"
+        )
+
+def test_null_thresholds():
+    df = pd.DataFrame({
+        "price": [100000, 200000, None],
+        "bedrooms": [3, 4, 5],
+        "bathrooms": [2, 2, None],
+        "area": [100, None, 150]
+    })
+
+    # Adjust sample data if you want this test to pass
+    validate_null_thresholds(df)
+ 
+ # 5. Regression pipeline tests
+Why this would be good
+
+Since the project now includes regression, it is valuable to test whether preprocessing and model fitting work end to end.
+
+Recommended test code
+import pandas as pd
+from sklearn.linear_model import LinearRegression
+
+def build_features(df: pd.DataFrame):
+    X = df[["area", "bedrooms", "bathrooms", "property_type"]]
+    X = pd.get_dummies(X, columns=["property_type"], drop_first=True)
+    y = df["price"]
+    return X, y
+
+def test_regression_pipeline_runs():
+    df = pd.DataFrame({
+        "area": [100, 120, 150, 180],
+        "bedrooms": [2, 3, 3, 4],
+        "bathrooms": [1, 2, 2, 3],
+        "property_type": ["Detached", "Detached", "Terraced", "Semi-Detached"],
+        "price": [200000, 250000, 240000, 320000]
+    })
+
+    X, y = build_features(df)
+    model = LinearRegression()
+    model.fit(X, y)
+    preds = model.predict(X)
+
+    assert len(preds) == len(df)
+Why adding these tests would improve the project
+
+These automated tests would make the project better because they would:
+
+catch data issues immediately when source files change
+protect core business logic like price_per_area
+make the pipeline safer to refactor
+reduce reliance on manual notebook inspection
+make the project more production-ready
+support CI/CD and team collaboration
+
+# 11. Scaling Strategy
+
+# Short Term (Extend Current System)
+# 1. Add More Cities
+
+How I would do it
+
+Extend the existing pattern:
+list_cities = ["London", "Birmingham", "Manchester", ...]
+Add new city CSVs or scraping targets
+Ensure schema consistency across all datasets
+
+Tech used
+
+Pandas (existing)
+Existing scraping stack (requests, BeautifulSoup)
+
+Why this works
+
+Your architecture is already modular by city
+Scaling horizontally (more cities) requires minimal changes
+
+Key benefit
+
+Increases dataset size → better insights and future model performance
+
+# 2. Automate Data Ingestion
+
+How I would do it
+
+Wrap scraping + cleaning into a function or script:
+def run_scraper(city):
+    data = scrape_city(city)
+    cleaned = clean_data(data)
+    save_to_csv(cleaned)
+Run it on a schedule:
+Cron job (simple)
+Prefect flow (more robust)
+
+Tech used
+
+Prefect (recommended)
+or cron (simpler alternative)
+
+Why this works
+
+Removes manual execution
+Keeps data fresh and continuously updated
+
+Key benefit
+
+Transforms project from static analysis → dynamic data pipeline
+
+# Medium Term (Pipeline Architecture)
+
+# 3. Move to ETL Pipeline
+
+How I would do it
+
+Split logic into modules:
+
+extract.py   → scraping
+transform.py → cleaning + feature engineering
+load.py      → save to DB
+
+Then orchestrate:
+
+def pipeline():
+    raw = extract()
+    clean = transform(raw)
+    load(clean)
+
+Tech used
+
+Pandas (transform)
+SQLAlchemy (load to DB)
+Prefect / Airflow (orchestration)
+
+Why this works
+
+Separates concerns:
+extraction
+transformation
+storage
+Makes system:
+testable
+reusable
+production-ready
+
+# 4. Scheduled Runs
+
+How I would do it
+
+Define workflows:
+@flow
+def daily_pipeline():
+    pipeline()
+Schedule:
+Run every 24 hours
+
+Tech used
+
+Prefect (preferred)
+Airflow (enterprise alternative)
+
+Why this works
+
+Ensures consistent data refresh
+Enables monitoring, retries, and logging
+
+Key benefit
+
+Moves from manual execution → reliable automation
+
+# Long Term (Production Scale)
+
+# 5. Use Distributed Systems (Spark / BigQuery)
+
+How I would do it
+
+Replace pandas with Spark:
+from pyspark.sql import SparkSession
+spark = SparkSession.builder.getOrCreate()
+df = spark.read.csv("data.csv")
+Or move to BigQuery:
+SELECT city, AVG(price_per_area)
+FROM properties
+GROUP BY city;
+
+Tech used
+
+Apache Spark (distributed compute)
+BigQuery (serverless analytics)
+
+Why this works
+
+Handles:
+millions → billions of rows
+Enables parallel processing
+
+Key benefit
+
+Removes single-machine bottlenecks
+
+# 6. Introduce APIs for Real-Time Insights
+
+How I would do it
+
+Build API:
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/price-estimate")
+def predict_price(area: float, bedrooms: int):
+    return model.predict(...)
+
+Tech used
+
+FastAPI
+scikit-learn (model serving)
+
+Why this works
+
+Enables:
+real-time predictions
+integration with apps/websites
+
+Key benefit
+
+Turns project into a product/service
+
+# 12. Future Improvements
+
+# 1. Build ML Model for Price Prediction
+
+How
+
+Extend current regression notebook:
+model.fit(X_train, y_train)
+Add evaluation:
+r2_score(y_test, y_pred)
+
+Why
+
+Moves from:
+Descriptive → Predictive analytics
+
+# 2. Add Geospatial Analysis (Location Intelligence)
+
+How
+
+Extract coordinates from addresses
+Use:
+distance to city center
+proximity to transport
+
+Tech
+
+geopandas
+folium
+
+Why
+
+Location is a key driver of property price
+
+# 3. Real-Time Scraping Pipelines
+
+How
+
+Trigger scraping:
+on schedule
+or via event (new listings)
+
+Tech
+
+Prefect
+message queues (future: Kafka)
+
+Why
+
+Keeps data continuously updated
+
+# 4. Dashboard (Streamlit / Power BI)
+
+How
+
+Build UI:
+import streamlit as st
+st.bar_chart(data)
+
+Tech
+
+Streamlit (fast)
+Power BI (enterprise)
+
+Why
+
+Makes insights accessible to non-technical users
+
+# 5. Data Warehouse (Snowflake / BigQuery)
+
+How
+
+Move from CSV:
+CSV → Database → Data Warehouse
+
+Tech
+
+BigQuery
+Snowflake
+
+Why
+
+Enables:
+fast queries
+historical analysis
+scalable storage
+
+# 6. Automated Anomaly Detection
+
+How
+
+Detect unusual prices:
+z_score = (value - mean) / std
+
+Tech
+
+scikit-learn
+statistical methods
+
+Why
+
+Flags:
+overpriced listings
+data errors
+
+# 7. Data Enrichment APIs
+
+How
+
+Integrate external APIs:
+postcode data
+crime rates
+school ratings
+
+Tech
+
+REST APIs
+requests
+
+Why
+
+Improves model accuracy and insights
