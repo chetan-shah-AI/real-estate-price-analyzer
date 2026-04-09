@@ -230,15 +230,16 @@ Easy extension to more advanced models (Random Forest, Gradient Boosting)
 
 Raw Scraped Data → Cleaned CSV → EDA → Insights / Reports 
 
-Scraping layer gathers raw data
-Cleaning layer ensures data quality
-EDA layer extracts meaning and prepares features
-Reporting layer delivers insights
+- Scraping layer gathers raw data
+- Cleaning layer ensures data quality
+- EDA layer extracts meaning and prepares features
+- Reporting layer delivers insights
 
 +----------------------+
 |  1. Raw Scraped Data    |
 +----------------------+
-What this layer does
+
+- What this layer does
 
 Collects raw property listings from external websites (e.g., Rightmove)
 Contains unstructured or semi-structured data:
@@ -247,14 +248,14 @@ Inconsistent formats
 Missing or noisy values
 Represents the source of truth before any transformation
 
-Tech stack used
+- Tech stack used
 
 requests → Fetch static web pages
 BeautifulSoup → Parse HTML content
 Selenium→ Handle JavaScript-rendered pages
 Pydantic → Validate scraped records and enforce schema
 
-Why it matters
+- Why it matters
 
 This layer determines data quality for the entire pipeline
 Poor scraping = unreliable analytics downstream
@@ -262,7 +263,8 @@ Poor scraping = unreliable analytics downstream
 +----------------------+
 |  2. Cleaned CSV Files   |
 +----------------------+
-What this layer does
+
+- What this layer does
 
 Transforms raw scraped data into structured datasets
 Performs:
@@ -271,14 +273,14 @@ Standardization (consistent schema across cities)
 Basic transformations (e.g., numeric conversion)
 Outputs clean .csv files per city
 
-Tech stack used
+- Tech stack used
 
 Pandas → Data cleaning and transformation
 NumPy → Numerical operations
 SQLAlchemy (optional future) → Persist cleaned data into DB
 SQLite / PostgreSQL (optional) → Structured storage
 
-Why it matters
+- Why it matters
 
 Creates a reliable, reusable dataset
 Decouples scraping from analysis
@@ -290,7 +292,8 @@ Enables reproducibility and faster iteration
 |  - Aggregations      |
 |  - Feature Eng       |
 +----------------------+
-What this layer does
+
+ - What this layer does
 
 Performs exploratory data analysis (EDA) and prepares data for modeling
 Key responsibilities:
@@ -300,14 +303,14 @@ Feature engineering (e.g., price_per_area)
 Aggregations (city-level, property-type level)
 Data transformation for ML (encoding, scaling)
 
-Tech stack used
+- Tech stack used
 
 Pandas → Core analysis and transformations
 NumPy → Numerical operations
 Matplotlib / Plotly → Visualization
 scikit-learn → (Regression layer) feature preparation & modeling
 
-Why it matters
+- Why it matters
 
 This is where raw data becomes insights
 
@@ -319,7 +322,8 @@ Forms the foundation for both analytics and machine learning
 +----------------------+
 |  4.Insights / Reports  |
 +----------------------+
-What this layer does
+
+- What this layer does
 
 Produces final outputs for stakeholders
 Includes:
@@ -328,14 +332,14 @@ Visualizations (bar charts, comparisons)
 Exported CSV reports
 Model-ready datasets (for regression)
 
-Tech stack used
+- Tech stack used
 
 Matplotlib / Plotly → Charts and visual outputs
 Pandas → Exporting reports (.csv)
 File system (/reports/) → Persisting outputs
 (Future) Streamlit / BI tools → Dashboarding
 
-Why it matters
+- Why it matters
 
 Converts analysis into actionable business insights
 Enables:
